@@ -1,0 +1,89 @@
+-- TONTINE PRO — Phase 1 — PostgreSQL/Supabase
+-- Côte d'Ivoire, montants entiers XOF, interface métier en français.
+-- À exécuter comme rôle propriétaire/migration Supabase (pas comme authenticated).
+-- IMPORTANT OTP : avant d'utiliser les OTP, configurer le secret serveur app.otp_secret
+-- (>=32 caractères aléatoires) dans la configuration PostgreSQL/Supabase non accessible
+-- aux clients. Les fonctions refusent d'émettre/vérifier un OTP si ce paramètre manque.
+-- Ne jamais placer ce secret dans une clé client, une table lisible, ni le code mobile.
+BEGIN;
+
+-- 1. Extensions et types métier
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DO $$ BEGIN CREATE TYPE public.tontine_role AS ENUM ('primary_admin','validator_admin','member'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.member_status AS ENUM ('active','inactive','suspended'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.payment_method AS ENUM ('cash','mobile_money','bank','other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.contribution_status AS ENUM ('valid','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.withdrawal_status AS ENUM ('pending_validation','approved','rejected','executed','expired','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.notification_channel AS ENUM ('whatsapp','sms'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.notification_status AS ENUM ('queued','sent','failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.contribution_frequency AS ENUM ('weekly','monthly','custom'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- 2. Tables
+CREATE TABLE IF NOT EXISTS public.profiles (
+ user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+ full_name text NOT NULL CHECK (length(trim(full_name))>0),
+ phone text UNIQUE NOT NULL CHECK (phone ~ '^[+]225[0-9]{10}$'),
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS public.tontines (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL CHECK(length(trim(name))>0), description text,
+ currency char(3) NOT NULL DEFAULT 'XOF' CHECK(currency='XOF'), created_by uuid NOT NULL REFERENCES auth.users(id),
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), archived_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS public.tontine_members (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE CASCADE,
+ user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL, full_name text NOT NULL CHECK(length(trim(full_name))>0),
+ phone text CHECK(phone IS NULL OR phone ~ '^[+]225[0-9]{10}$'), email text,
+ role public.tontine_role NOT NULL DEFAULT 'member', status public.member_status NOT NULL DEFAULT 'active',
+ joined_at timestamptz NOT NULL DEFAULT now(), UNIQUE(id,tontine_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tontine_one_primary_admin ON public.tontine_members(tontine_id) WHERE role='primary_admin';
+CREATE UNIQUE INDEX IF NOT EXISTS tontine_one_validator_admin ON public.tontine_members(tontine_id) WHERE role='validator_admin';
+CREATE UNIQUE INDEX IF NOT EXISTS tontine_unique_user ON public.tontine_members(tontine_id,user_id) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS tontine_unique_member_phone ON public.tontine_members(tontine_id,phone) WHERE phone IS NOT NULL;
+CREATE TABLE IF NOT EXISTS public.contribution_plans (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE CASCADE,
+ frequency public.contribution_frequency NOT NULL, amount bigint NOT NULL CHECK(amount>0), custom_frequency text,
+ starts_on date NOT NULL DEFAULT CURRENT_DATE, ends_on date, active boolean NOT NULL DEFAULT true,
+ created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+ CHECK((frequency='custom' AND NULLIF(trim(custom_frequency),'') IS NOT NULL) OR (frequency<>'custom' AND custom_frequency IS NULL)),
+ CHECK(ends_on IS NULL OR ends_on>=starts_on)
+);
+CREATE TABLE IF NOT EXISTS public.contributions (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE RESTRICT,
+ member_id uuid NOT NULL, amount bigint NOT NULL CHECK(amount>0), paid_on date NOT NULL DEFAULT CURRENT_DATE,
+ method public.payment_method NOT NULL, period text NOT NULL CHECK(length(trim(period))>0), reference text, proof_path text,
+ recorded_by uuid NOT NULL REFERENCES auth.users(id), status public.contribution_status NOT NULL DEFAULT 'valid',
+ cancellation_reason text, corrects_id uuid REFERENCES public.contributions(id) ON DELETE RESTRICT,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(member_id,tontine_id) REFERENCES public.tontine_members(id,tontine_id) ON DELETE RESTRICT,
+ CHECK((status='cancelled' AND NULLIF(trim(cancellation_reason),'') IS NOT NULL) OR status='valid'), UNIQUE(id,tontine_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS contribution_one_cancellation ON public.contributions(corrects_id) WHERE status='cancelled' AND corrects_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS public.receipts (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE RESTRICT,
+ contribution_id uuid NOT NULL UNIQUE,
+ FOREIGN KEY(contribution_id,tontine_id) REFERENCES public.contributions(id,tontine_id) ON DELETE RESTRICT,
+ receipt_number bigint NOT NULL CHECK(receipt_number>0), issued_at timestamptz NOT NULL DEFAULT now(), UNIQUE(tontine_id,receipt_number)
+);
+CREATE TABLE IF NOT EXISTS public.ledger_entries (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE RESTRICT,
+ entry_type text NOT NULL CHECK(entry_type IN ('contribution','contribution_reversal','withdrawal')),
+ amount bigint NOT NULL CHECK(amount<>0), contribution_id uuid,
+ withdrawal_id uuid, description text NOT NULL, created_by uuid REFERENCES auth.users(id), created_at timestamptz NOT NULL DEFAULT now(),
+ FOREIGN KEY(contribution_id,tontine_id) REFERENCES public.contributions(id,tontine_id) ON DELETE RESTRICT,
+ CHECK((entry_type='withdrawal' AND withdrawal_id IS NOT NULL AND contribution_id IS NULL AND amount<0) OR
+       (entry_type='contribution' AND contribution_id IS NOT NULL AND withdrawal_id IS NULL AND amount>0) OR
+       (entry_type='contribution_reversal' AND contribution_id IS NOT NULL AND withdrawal_id IS NULL AND amount<0))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ledger_one_withdrawal_entry ON public.ledger_entries(withdrawal_id) WHERE withdrawal_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS public.withdrawals (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), tontine_id uuid NOT NULL REFERENCES public.tontines(id) ON DELETE RESTRICT,
+ amount bigint NOT NULL CHECK(amount>0), reason text NOT NULL CHECK(length(trim(reason))>0), beneficiary text NOT NULL CHECK(length(trim(beneficiary))>0),
+ initiated_by uuid NOT NULL REFERENCES auth.users(id), status public.withdrawal_status NOT NULL DEFAULT 'pending_validation',
+ validation_expires_at timestamptz NOT NULL DEFAULT (now()+interval '5 minutes'), execution_deadline timestamptz,
+ rejection_reason text, execution_reference text, executed_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+ CHECK((status='approved')=(execution_deadline IS NOT NULL) OR status IN ('executed','expired','cancelled','rejected')),
+ CHECK((status='executed')=(executed_at IS NOT NULL)), UNIQUE(id,tontine_id)
+);
+ALTER TABLE public.ledger_entries DROP CONSTRAINT IF EXISTS ledger_entries_withdrawal_id_fkey;
