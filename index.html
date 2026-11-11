@@ -1,1 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1b3a">
+<title>TONTINE PRO</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#0b1b3a;--mut:#64708a;--navy:#0b1b3a;--em:#10b981;--red:#e5484d;--amber:#d98e04;--line:#e4e8f0;--soft:#eef1f7}
+[data-theme=dark]{--bg:#070f22;--card:#0f1c3a;--ink:#eaf0ff;--mut:#93a1c2;--line:#1b2a4f;--soft:#14244a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;align-items:center;gap:10px}
+header h1{font-size:17px;margin:0;flex:1}header small{display:block;font-weight:400;opacity:.7;font-size:12px}
+.bell{position:relative;background:none;border:0;color:#fff;font-size:22px;padding:4px 8px}
+.bell b{position:absolute;top:0;right:0;background:var(--red);border-radius:10px;font-size:11px;padding:1px 6px}
+main{padding:14px;max-width:760px;margin:0 auto;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.hero{background:linear-gradient(135deg,#0b1b3a,#143a6b);color:#fff;border:0}
+.hero .l{opacity:.75;font-size:13px}.hero .v{font-size:30px;font-weight:700;margin-top:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.grid .card{margin:0}.l{font-size:12px;color:var(--mut)}.v{font-size:19px;font-weight:700;margin-top:4px}
+.em{color:var(--em)}.red{color:var(--red)}
+h2{font-size:15px;margin:16px 2px 8px}h3{margin:0 0 6px;font-size:18px}
+.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}.row.tap{cursor:pointer}.row .t{flex:1;min-width:0}.row .t b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t span{font-size:12px;color:var(--mut)}.amt{font-weight:700;white-space:nowrap}
+.av{width:38px;height:38px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;white-space:nowrap}
+.b-em{background:#10b98122;color:var(--em)}.b-red{background:#e5484d22;color:var(--red)}.b-amber{background:#d98e0422;color:var(--amber)}.b-gray{background:var(--soft);color:var(--mut)}
+input,select{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:16px;margin:6px 0}
+button.pri{width:100%;padding:15px;border:0;border-radius:14px;background:var(--em);color:#fff;font-size:16px;font-weight:700;margin-top:8px}
+button.pri:disabled{opacity:.6}button.sec{width:100%;padding:13px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:15px;margin-top:8px}
+button.back{background:none;border:0;color:var(--em);font-size:15px;padding:4px 0 10px;font-weight:600}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:5}
+nav button{flex:1;background:none;border:0;color:var(--mut);font-size:11px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button i{font-style:normal;font-size:20px}nav button.on{color:var(--em);font-weight:700}
+.login{max-width:380px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top)) 20px 20px}
+.login h1{font-size:26px;margin:0 0 4px}.login p{color:var(--mut);margin:0 0 20px}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:6px}
+.chips{display:flex;gap:8px;margin-bottom:10px}.chip{padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:8px}.bars div{flex:1;text-align:center;font-size:10px;color:var(--mut)}
+.bars span{display:block;background:var(--em);border-radius:6px 6px 0 0;min-height:3px;margin-bottom:4px}
+.note{font-size:13px;color:var(--mut);background:var(--soft);border-radius:12px;padding:12px;margin-bottom:12px}
+.empty{text-align:center;color:var(--mut);padding:24px 8px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:99;max-width:90%;text-align:center}
+.spin{text-align:center;padding:50px;color:var(--mut)}
+.ov{position:fixed;inset:0;background:#000a;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));animation:fade .2s}
+.sheet .x{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--mut);font-size:20px}
+.rc{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:16px;margin:8px 0}
+.rc .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px;border-bottom:1px solid var(--line)}.rc .kv:last-child{border:0}.rc .kv span:first-child{color:var(--mut)}
+.fab{width:100%;padding:14px;border:0;border-radius:14px;background:var(--navy);color:#fff;font-size:15px;font-weight:700;margin-bottom:10px}
+@media print{body *{visibility:hidden}#receipt,#receipt *{visibility:visible}#receipt{position:absolute;left:0;top:0;width:100%;color:#000;background:#fff}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============ CONFIGURATION (à remplacer) ============
+const SUPABASE_URL = "https://eequklxzvevvomcglbhe.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_dmNLkiwf1IHMY-ef2omg0Q_hVqp_I1n"; // jamais la clé service_role
+// =====================================================
 
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fcfa = n => Number(n || 0).toLocaleString('fr-FR') + ' FCFA';
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fdate = s => s ? new Date(s).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}) : '';
+const initials = n => (n || '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+const STATUS = {en_attente:['En attente','gray'], en_attente_validation:['En attente de validation','amber'], autorisee:['Autorisée','em'], rejetee:['Rejetée','red'], expiree:['Expirée','gray'], executee:['Exécutée','em'], annulee:['Annulée','gray']};
+const METHOD = {especes:'Espèces', mobile_money:'Mobile Money', virement:'Virement', autre:'Autre'};
+const ROLE = {admin_principal:'Administrateur principal', admin_validateur:'Administrateur validateur', member:'Membre'};
+
+const S = {sb:null, user:null, profile:null, ms:[], cur:0, members:[], contribs:[], rcpt:{}, wds:[], bal:{balance:0,total_in:0,total_out:0}, notifs:[], view:'home', sel:null, q:'', mine:false, loading:false, err:'', cred:null};
+const configured = !SUPABASE_URL.startsWith('COLLE_') && !SUPABASE_ANON_KEY.startsWith('COLLE_');
+
+function toast(m, ms = 3200){ const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+function theme(t){ document.documentElement.dataset.theme = t; localStorage.setItem('tp_theme', t); }
+theme(localStorage.getItem('tp_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+function modal(html){ closeModal(); const o = document.createElement('div'); o.id = 'ov'; o.className = 'ov'; o.innerHTML = `<div class="sheet"><button class="x" onclick="closeModal()" aria-label="Fermer">✕</button>${html}</div>`; o.addEventListener('click', e => { if (e.target === o) closeModal(); }); document.body.appendChild(o); }
+function closeModal(){ const o = $('#ov'); if (o) o.remove(); }
+
+// ---------- Données ----------
+const tontine = () => S.ms[S.cur] && S.ms[S.cur].tontines;
+const role = () => S.ms[S.cur] && S.ms[S.cur].role;
+const isAdmin = () => ['admin_principal', 'admin_validateur'].includes(role());
+const isPrincipal = () => role() === 'admin_principal';
+const myMemberId = () => S.ms[S.cur] && S.ms[S.cur].id;
+const tid = () => S.ms[S.cur].tontine_id;
+const mname = id => { const m = S.members.find(x => x.id === id); return m && m.users ? m.users.full_name : 'Membre'; };
+
+function periodStart(type, d = new Date()) {
+  if (type === 'weekly') { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
+  return iso(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+function standing() {
+  const t = tontine(); if (!t) return [];
+  const ps = periodStart(t.period), limit = new Date(ps); limit.setDate(limit.getDate() + (t.grace_days || 0));
+  return S.members.filter(m => m.status === 'active').map(m => {
+    const paid = S.contribs.filter(c => c.member_id === m.id && c.period_start === ps).reduce((a, c) => a + Number(c.amount), 0);
+    const st = paid >= t.contribution_amount ? 'ok' : (new Date() > limit ? 'late' : 'due');
+    return {...m, paid, st};
+  });
+}
+async function loadTontine() {
+  if (!S.ms[S.cur]) return;
+  const sb = S.sb, id = tid();
+  const [mem, con, rc, wd, bal, nt] = await Promise.all([
+    sb.from('tontine_members').select('id,user_id,role,status,users!tontine_members_user_id_fkey(full_name,phone,email)').eq('tontine_id', id).order('joined_at'),
+    sb.from('contributions').select('id,member_id,kind,amount,period_start,paid_at,method,tx_reference,note,recorded_by,corrects_id').eq('tontine_id', id).order('paid_at', {ascending:false}).limit(1000),
+    sb.from('contribution_receipts').select('contribution_id,receipt_number,issued_at').eq('tontine_id', id),
+    sb.from('withdrawal_requests').select('id,amount,reason,beneficiary,withdrawal_date,status,execution_reference,created_at').eq('tontine_id', id).order('created_at', {ascending:false}).limit(100),
+    sb.from('tontine_balances').select('balance,total_in,total_out').eq('tontine_id', id).maybeSingle(),
+    sb.from('notifications').select('id,title,body,read_at,created_at').eq('user_id', S.user.id).order('created_at', {ascending:false}).limit(50)
+  ]);
+  const e = mem.error || con.error || rc.error || wd.error || bal.error || nt.error; if (e) throw e;
+  S.members = mem.data || []; S.contribs = con.data || []; S.wds = wd.data || [];
+  S.rcpt = {}; (rc.data || []).forEach(r => S.rcpt[r.contribution_id] = r);
+  S.bal = bal.data || {balance:0, total_in:0, total_out:0}; S.notifs = nt.data || [];
+}
+async function boot() {
+  const {data:{session}} = await S.sb.auth.getSession();
+  if (!session) { S.user = null; return render(); }
+  S.user = session.user; S.loading = true; S.err = ''; render();
+  try {
+    const [p, m] = await Promise.all([
+      S.sb.from('users').select('id,full_name,phone,email').eq('id', S.user.id).maybeSingle(),
+      S.sb.from('tontine_members').select('id,tontine_id,role,status,tontines(name,contribution_amount,period,grace_days)').eq('user_id', S.user.id).eq('status', 'active')
+    ]);
+    if (p.error || m.error) throw (p.error || m.error);
+    S.profile = p.data; S.ms = m.data || []; S.cur = 0;
+    if (S.ms.length) await loadTontine();
+  } catch (e) { S.err = "Impossible de charger les données. Vérifie ta connexion puis réessaie."; console.error(e); }
+  S.loading = false; render();
+}
+async function refresh() { try { await loadTontine(); } catch (e) { toast('Actualisation impossible'); } render(); }
+
+// ---------- Connexion ----------
+function normPhone(raw) { const s = String(raw).trim(); let d = s.replace(/\D/g, ''); if (s.startsWith('+')) return d; if (d.startsWith('00')) d = d.slice(2); return d.startsWith('225') ? d : '225' + d; }
+async function login() {
+  const phone = $('#ph').value, pin = $('#pin').value, err = $('#err'), btn = $('#go');
+  if (!/^\d{6}$/.test(pin)) { err.textContent = 'Le code PIN doit contenir 6 chiffres.'; return; }
+  if (normPhone(phone).length < 11) { err.textContent = 'Numéro de téléphone incomplet.'; return; }
+  btn.disabled = true; btn.textContent = 'Connexion…'; err.textContent = '';
+  const {error} = await S.sb.auth.signInWithPassword({email: normPhone(phone) + '@phone.tontinepro.app', password: pin});
+  if (error) { err.textContent = 'Numéro ou code PIN incorrect.'; btn.disabled = false; btn.textContent = 'Se connecter'; return; }
+  S.view = 'home'; boot();
+}
+async function logout() { if (confirm('Te déconnecter ?')) { await S.sb.auth.signOut(); S.user = null; S.ms = []; render(); } }
+
+// ---------- Actions : membres ----------
+async function fnMsg(e) { try { if (e.context && e.context.json) { const j = await e.context.json(); return j.error || e.message; } } catch (_) {} return e.message || 'Erreur'; }
+function openAdd() {
+  modal(`<h3>Ajouter un membre</h3><p class="l">Un compte est créé avec un code PIN provisoire.</p>
+  <label class="l">Nom complet</label><input id="a_name" autocomplete="off">
+  <label class="l">Téléphone</label><input id="a_ph" type="tel" inputmode="tel" value="+225 ">
+  <label class="l">E-mail (facultatif)</label><input id="a_mail" type="email">
+  <div class="err" id="a_err"></div><button class="pri" id="a_go" onclick="submitAdd()">Créer le compte</button>`);
+}
+async function submitAdd() {
+  const name = $('#a_name').value.trim(), digits = normPhone($('#a_ph').value), mail = $('#a_mail').value.trim(), err = $('#a_err'), b = $('#a_go');
+  if (name.length < 2) { err.textContent = 'Saisis le nom complet.'; return; }
+  if (digits.length < 11) { err.textContent = 'Numéro de téléphone incomplet.'; return; }
+  b.disabled = true; b.textContent = 'Création…'; err.textContent = '';
+  const {data, error} = await S.sb.functions.invoke('create-member', {body: {tontine_id: tid(), full_name: name, phone: '+' + digits, email: mail}});
+  if (error || (data && data.error)) { err.textContent = error ? await fnMsg(error) : data.error; b.disabled = false; b.textContent = 'Créer le compte'; return; }
+  closeModal(); await refresh(); showCred(data, name);
+}
+function showCred(d, name) {
+  const digits = d.phone.replace(/\D/g, '');
+  if (!d.pin) { modal(`<h3>Membre ajouté ✅</h3><div class="note">${esc(name)} avait déjà un compte : il se connecte avec son code PIN habituel.</div>`); return; }
+  S.cred = {digits, msg: `Bonjour ${name}, ton compte TONTINE PRO est prêt.\nLien : ${location.origin}${location.pathname}\nTéléphone : ${d.phone}\nCode PIN provisoire : ${d.pin}\nChange ce code dès ta première connexion (menu Profil).`};
+  modal(`<h3>Compte créé ✅</h3><div class="note">Ce code n’est affiché qu’une seule fois. Transmets-le au membre.</div>
+  <div class="card"><div class="l">Téléphone</div><div class="v">${esc(d.phone)}</div><div class="l" style="margin-top:10px">Code PIN provisoire</div><div class="v">${esc(d.pin)}</div></div>
+  <button class="pri" onclick="sendCred()">Envoyer par WhatsApp</button>`);
+}
+function sendCred() { if (S.cred) window.open('https://wa.me/' + S.cred.digits + '?text=' + encodeURIComponent(S.cred.msg), '_blank'); }
+function openEdit(mid) {
+  const m = S.members.find(x => x.id === mid);
+  modal(`<h3>Modifier le membre</h3><label class="l">Nom complet</label><input id="e_name" value="${esc(m.users.full_name)}"><label class="l">E-mail (facultatif)</label><input id="e_mail" type="email" value="${esc(m.users.email || '')}">
+  <div class="err" id="e_err"></div><button class="pri" id="e_go" onclick="submitEdit('${esc(mid)}')">Enregistrer</button>`);
+}
+async function submitEdit(mid) {
+  const b = $('#e_go'), err = $('#e_err'); b.disabled = true;
+  const {error} = await S.sb.rpc('update_member', {p_member: mid, p_full_name: $('#e_name').value, p_email: $('#e_mail').value});
+  if (error) { err.textContent = error.message; b.disabled = false; return; }
+  closeModal(); toast('Membre modifié'); await refresh();
+}
+async function toggleStatus(mid) {
+  const m = S.members.find(x => x.id === mid), to = m.status === 'active' ? 'inactive' : 'active';
+  if (!confirm(`${to === 'inactive' ? 'Désactiver' : 'Réactiver'} le compte de ${m.users.full_name} ?`)) return;
+  const {error} = await S.sb.rpc('set_member_status', {p_member: mid, p_status: to});
+  if (error) { toast(error.message, 4500); return; }
+  toast(to === 'inactive' ? 'Compte désactivé' : 'Compte réactivé'); await refresh();
+}
+
+// ---------- Actions : cotisations et reçus ----------
+function openPay(mid) {
+  const t = tontine(), m = S.members.find(x => x.id === mid), today = iso(new Date());
+  modal(`<h3>Enregistrer une cotisation</h3><p class="l">${esc(m.users.full_name)}</p>
+  <label class="l">Montant (FCFA)</label><input id="f_amt" type="number" inputmode="numeric" min="1" value="${esc(t.contribution_amount)}">
+  <label class="l">Date du paiement</label><input id="f_date" type="date" max="${today}" value="${today}">
+  <label class="l">Période concernée (un jour de la période)</label><input id="f_per" type="date" value="${today}">
+  <label class="l">Mode de paiement</label><select id="f_met"><option value="especes">Espèces</option><option value="mobile_money">Mobile Money</option><option value="virement">Virement</option><option value="autre">Autre</option></select>
+  <label class="l">Référence de transaction (facultatif)</label><input id="f_ref" maxlength="60">
+  <div class="err" id="f_err"></div><button class="pri" id="f_go" onclick="submitPay('${esc(mid)}')">Enregistrer</button>`);
+}
+async function submitPay(mid) {
+  const amt = Math.round(Number($('#f_amt').value)), err = $('#f_err'), b = $('#f_go');
+  if (!(amt > 0)) { err.textContent = 'Montant invalide.'; return; }
+  if (!confirm(`Confirmer la cotisation de ${fcfa(amt)} pour ${mname(mid)} ?`)) return;
+  b.disabled = true; b.textContent = 'Enregistrement…'; err.textContent = '';
+  const {data, error} = await S.sb.rpc('record_contribution', {p_tontine: tid(), p_member: mid, p_amount: amt, p_period: $('#f_per').value || null, p_method: $('#f_met').value, p_reference: $('#f_ref').value || null, p_paid_at: $('#f_date').value || iso(new Date())});
+  if (error) { err.textContent = error.message; b.disabled = false; b.textContent = 'Enregistrer'; return; }
+  closeModal(); await refresh(); toast('Cotisation enregistrée'); openReceipt(data);
+}
+function periodLabel(c) {
+  const t = tontine(), d = new Date(c.period_start);
+  return t.period === 'weekly' ? 'Semaine du ' + fdate(c.period_start) : d.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+}
+function openReceipt(cid) {
+  const c = S.contribs.find(x => x.id === cid); if (!c) return;
+  const r = S.rcpt[cid], t = tontine(), by = S.members.find(x => x.user_id === c.recorded_by), corrected = S.contribs.some(x => x.corrects_id === cid);
+  const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${esc(v)}</span></div>`;
+  modal(`<h3>Reçu de cotisation</h3>
+  <div class="rc" id="receipt"><b>${esc(t.name)}</b><div class="l">${r ? 'Reçu n° ' + esc(r.receipt_number) : 'Opération de correction'}</div>
+  ${kv('Membre', mname(c.member_id))}${kv('Montant', fcfa(c.amount))}${kv('Date', fdate(c.paid_at))}${kv('Période', periodLabel(c))}${kv('Mode', METHOD[c.method] || c.method)}${c.tx_reference ? kv('Référence', c.tx_reference) : ''}${c.note ? kv('Motif', c.note) : ''}${kv('Enregistré par', by && by.users ? by.users.full_name : '—')}</div>
+  ${corrected ? '<div class="note">Cette cotisation a été annulée par une correction.</div>' : ''}
+  <button class="sec" onclick="shareReceipt('${esc(cid)}')">Partager sur WhatsApp</button>
+  <button class="sec" onclick="window.print()">Imprimer / enregistrer en PDF</button>
+  ${isPrincipal() && c.kind === 'payment' && !corrected ? `<button class="sec" style="color:var(--red)" onclick="reverse('${esc(cid)}')">Annuler cette cotisation (correction)</button>` : ''}`);
+}
+function shareReceipt(cid) {
+  const c = S.contribs.find(x => x.id === cid), r = S.rcpt[cid], t = tontine();
+  const txt = `${t.name}\nReçu ${r ? r.receipt_number : ''}\nMembre : ${mname(c.member_id)}\nMontant : ${fcfa(c.amount)}\nDate : ${fdate(c.paid_at)}\nMode : ${METHOD[c.method] || c.method}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+async function reverse(cid) {
+  const reason = prompt('Motif de la correction (obligatoire) :'); if (!reason || reason.trim().length < 3) { if (reason !== null) toast('Motif trop court'); return; }
+  if (!confirm('Annuler définitivement cette cotisation ? Une opération de correction traçable sera créée.')) return;
+  const {error} = await S.sb.rpc('reverse_contribution', {p_contribution: cid, p_reason: reason});
+  if (error) { toast(error.message, 4500); return; }
+  closeModal(); toast('Correction enregistrée'); await refresh();
+}
+
+// ---------- Profil : changer le PIN ----------
+function openPin() {
+  modal(`<h3>Changer mon code PIN</h3><input id="p1" type="password" inputmode="numeric" maxlength="6" placeholder="Nouveau PIN (6 chiffres)"><input id="p2" type="password" inputmode="numeric" maxlength="6" placeholder="Confirmer le PIN">
+  <div class="err" id="p_err"></div><button class="pri" id="p_go" onclick="submitPin()">Enregistrer</button>`);
+}
+async function submitPin() {
+  const p1 = $('#p1').value, p2 = $('#p2').value, err = $('#p_err'), b = $('#p_go');
+  if (!/^\d{6}$/.test(p1)) { err.textContent = 'Le PIN doit contenir 6 chiffres.'; return; }
+  if (p1 !== p2) { err.textContent = 'Les deux codes ne correspondent pas.'; return; }
+  if (/^(\d)\1{5}$/.test(p1) || ['123456', '654321', '012345'].includes(p1)) { err.textContent = 'Ce code est trop facile à deviner.'; return; }
+  b.disabled = true;
+  const {error} = await S.sb.auth.updateUser({password: p1});
+  if (error) { err.textContent = 'Modification impossible. Reconnecte-toi puis réessaie.'; b.disabled = false; return; }
+  closeModal(); toast('Code PIN modifié');
+}
+
+// ---------- Vues ----------
+function vLogin() {
+  return `<div class="login"><h1>TONTINE PRO</h1><p>Connecte-toi avec ton numéro de téléphone.</p>
+  <label class="l">Téléphone</label><input id="ph" type="tel" inputmode="tel" placeholder="07 00 00 00 00" value="+225 " autocomplete="username">
+  <label class="l">Code PIN (6 chiffres)</label><input id="pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="current-password">
+  <div class="err" id="err"></div><button class="pri" id="go" onclick="login()">Se connecter</button></div>`;
+}
+function payRow(c) {
+  const tap = S.rcpt[c.id] ? ` tap" onclick="openReceipt('${esc(c.id)}')` : '';
+  return `<div class="row${tap}"><div class="av">${esc(initials(mname(c.member_id)))}</div><div class="t"><b>${esc(mname(c.member_id))}</b><span>${fdate(c.paid_at)} · ${esc(METHOD[c.method] || c.method)}${c.tx_reference ? ' · ' + esc(c.tx_reference) : ''}${c.kind === 'correction' ? ' · correction' : ''}</span></div><div class="amt ${c.amount < 0 ? 'red' : 'em'}">${c.amount > 0 ? '+' : ''}${fcfa(c.amount)}</div></div>`;
+}
+function vHome() {
+  const t = tontine(), st = standing(), ok = st.filter(x => x.st === 'ok').length, late = st.filter(x => x.st === 'late').length;
+  const months = []; for (let i = 5; i >= 0; i--) { const d = new Date(); d.setMonth(d.getMonth() - i, 1); months.push({k: iso(d).slice(0, 7), l: d.toLocaleDateString('fr-FR', {month:'short'}), v: 0}); }
+  S.contribs.forEach(c => { const m = months.find(x => x.k === String(c.paid_at).slice(0, 7)); if (m) m.v += Number(c.amount); });
+  const max = Math.max(1, ...months.map(m => m.v)), last = S.contribs.slice(0, 5);
+  return `<div class="card hero"><div class="l">Solde total disponible</div><div class="v">${fcfa(S.bal.balance)}</div></div>
+  <div class="grid">
+    <div class="card"><div class="l">Total des cotisations</div><div class="v em">${fcfa(S.bal.total_in)}</div></div>
+    <div class="card"><div class="l">Total des retraits</div><div class="v">${fcfa(S.bal.total_out)}</div></div>
+    <div class="card"><div class="l">Membres actifs</div><div class="v">${st.length}</div></div>
+    <div class="card"><div class="l">À jour ${t.period === 'weekly' ? 'cette semaine' : 'ce mois'}</div><div class="v em">${ok}</div></div>
+    <div class="card"><div class="l">En retard</div><div class="v ${late ? 'red' : ''}">${late}</div></div>
+    <div class="card"><div class="l">Cotisation</div><div class="v">${fcfa(t.contribution_amount)}</div></div>
+  </div>
+  <h2>Cotisations des 6 derniers mois</h2><div class="card"><div class="bars">${months.map(m => `<div><span style="height:${Math.round(m.v / max * 90)}px"></span>${esc(m.l)}</div>`).join('')}</div></div>
+  <h2>Derniers paiements</h2><div class="card">${last.length ? last.map(payRow).join('') : '<div class="empty">Aucun paiement enregistré.</div>'}</div>
+  ${isAdmin() ? `<h2>Retraits en attente</h2><div class="card">${vWdRows(S.wds.filter(w => ['en_attente', 'en_attente_validation', 'autorisee'].includes(w.status)))}</div>` : ''}`;
+}
+function memberRows() {
+  const L = {ok:['À jour','em'], late:['En retard','red'], due:['À payer','amber'], off:['Inactif','gray']}, qq = S.q.toLowerCase(), stMap = {};
+  standing().forEach(s => stMap[s.id] = s.st);
+  const r = S.members.filter(m => !qq || (m.users && m.users.full_name.toLowerCase().includes(qq)));
+  return r.length ? r.map(m => { const st = stMap[m.id] || 'off'; return `<div class="row tap" onclick="openMember('${esc(m.id)}')"><div class="av">${esc(initials(m.users && m.users.full_name))}</div><div class="t"><b>${esc(m.users ? m.users.full_name : 'Membre')}</b><span>${esc(ROLE[m.role])}${isAdmin() && m.users ? ' · ' + esc(m.users.phone) : ''}</span></div><span class="badge b-${L[st][1]}">${L[st][0]}</span></div>`; }).join('') : '<div class="empty">Aucun membre trouvé.</div>';
+}
+function openMember(id) { S.sel = id; S.view = 'member'; render(); scrollTo(0, 0); }
+function vMembers() {
+  return `${isPrincipal() ? '<button class="fab" onclick="openAdd()">＋ Ajouter un membre</button>' : ''}<input id="q" placeholder="Rechercher un membre" value="${esc(S.q)}" oninput="S.q=this.value;document.querySelector('#ml').innerHTML=memberRows()"><div class="card" id="ml">${memberRows()}</div>`;
+}
+function vMember() {
+  const m = S.members.find(x => x.id === S.sel); if (!m) return '<div class="empty">Membre introuvable.</div>';
+  const mine = S.contribs.filter(c => c.member_id === m.id), total = mine.reduce((a, c) => a + Number(c.amount), 0);
+  return `<button class="back" onclick="S.view='members';render()">‹ Retour</button>
+  <div class="card"><div class="row"><div class="av">${esc(initials(m.users && m.users.full_name))}</div><div class="t"><b>${esc(m.users ? m.users.full_name : 'Membre')}</b><span>${esc(ROLE[m.role])}${m.status === 'inactive' ? ' · inactif' : ''}</span></div></div>
+  ${isAdmin() && m.users ? `<div class="row"><div class="t"><b>Téléphone</b><span>${esc(m.users.phone)}</span></div></div>` : ''}
+  <div class="row"><div class="t"><b>Total versé</b><span>${fcfa(total)}</span></div></div></div>
+  ${isPrincipal() ? `${m.status === 'active' ? `<button class="pri" onclick="openPay('${esc(m.id)}')">Enregistrer une cotisation</button>` : ''}<button class="sec" onclick="openEdit('${esc(m.id)}')">Modifier les informations</button>${m.role === 'member' ? `<button class="sec" onclick="toggleStatus('${esc(m.id)}')">${m.status === 'active' ? 'Désactiver le compte' : 'Réactiver le compte'}</button>` : ''}` : ''}
+  <h2>Historique</h2><div class="card">${mine.length ? mine.map(payRow).join('') : '<div class="empty">Aucune cotisation.</div>'}</div>`;
+}
+function vContribs() {
+  const mine = S.contribs.filter(c => !S.mine || c.member_id === myMemberId());
+  return `<div class="chips"><button class="chip ${S.mine ? '' : 'on'}" onclick="S.mine=false;render()">Toutes</button><button class="chip ${S.mine ? 'on' : ''}" onclick="S.mine=true;render()">Les miennes</button></div>
+  <div class="card">${mine.length ? mine.map(payRow).join('') : '<div class="empty">Aucune cotisation.</div>'}</div><div class="l" style="text-align:center">Touche une ligne pour voir le reçu.</div>`;
+}
+function vWdRows(rows) {
+  return rows.length ? rows.map(w => { const s = STATUS[w.status] || [w.status, 'gray']; return `<div class="row"><div class="t"><b>${esc(w.reason)}</b><span>${fdate(w.withdrawal_date)} · ${esc(w.beneficiary)}</span></div><div style="text-align:right"><div class="amt">${fcfa(w.amount)}</div><span class="badge b-${s[1]}">${s[0]}</span></div></div>`; }).join('') : '<div class="empty">Aucun retrait.</div>';
+}
+function vWds() {
+  return `${isAdmin() ? '<div class="note">Consultation uniquement pour l’instant : la création d’une demande et la validation par code WhatsApp seront activées à la Phase 6.</div>' : ''}<div class="card">${vWdRows(S.wds)}</div>`;
+}
+function vAlerts() {
+  return `<div class="card">${S.notifs.length ? S.notifs.map(n => `<div class="row tap" onclick="readN('${esc(n.id)}')"><div class="t"><b>${n.read_at ? '' : '● '}${esc(n.title)}</b><span>${esc(n.body || '')} · ${fdate(n.created_at)}</span></div></div>`).join('') : '<div class="empty">Aucune notification.</div>'}</div>`;
+}
+async function readN(id) { const {error} = await S.sb.from('notifications').update({read_at: new Date().toISOString()}).eq('id', id); if (!error) { const n = S.notifs.find(x => x.id === id); if (n) n.read_at = new Date().toISOString(); render(); } }
+function vProfile() {
+  const p = S.profile || {};
+  return `<div class="card"><div class="row"><div class="av">${esc(initials(p.full_name))}</div><div class="t"><b>${esc(p.full_name)}</b><span>${esc(p.phone)}</span></div></div>
+  <div class="row"><div class="t"><b>Rôle</b><span>${esc(ROLE[role()])}</span></div></div></div>
+  ${S.ms.length > 1 ? `<select onchange="S.cur=+this.value;boot2()">${S.ms.map((m, i) => `<option value="${i}" ${i === S.cur ? 'selected' : ''}>${esc(m.tontines.name)}</option>`).join('')}</select>` : ''}
+  <button class="sec" onclick="openPin()">Changer mon code PIN</button>
+  <button class="sec" onclick="theme(document.documentElement.dataset.theme==='dark'?'light':'dark')">Mode clair / sombre</button>
+  <button class="sec" onclick="logout()">Se déconnecter</button>`;
+}
+async function boot2() { S.loading = true; render(); try { await loadTontine(); } catch (e) { S.err = 'Erreur de chargement.'; } S.loading = false; render(); }
+
+const TABS = [['home','🏠','Accueil'], ['members','👥','Membres'], ['contribs','💰','Cotisations'], ['wds','🔒','Retraits'], ['profile','👤','Profil']];
+const VIEWS = {home:vHome, members:vMembers, member:vMember, contribs:vContribs, wds:vWds, alerts:vAlerts, profile:vProfile};
+
+function render() {
+  const app = $('#app');
+  if (!configured) { app.innerHTML = '<div class="login"><h1>Configuration requise</h1><p>Ouvre le fichier index.html et remplace SUPABASE_URL et SUPABASE_ANON_KEY en haut du script.</p></div>'; return; }
+  if (!S.user) { app.innerHTML = vLogin(); return; }
+  if (S.loading) { app.innerHTML = '<div class="spin">Chargement…</div>'; return; }
+  if (S.err) { app.innerHTML = `<main><div class="card"><div class="empty">${esc(S.err)}</div><button class="pri" onclick="boot()">Réessayer</button><button class="sec" onclick="logout()">Se déconnecter</button></div></main>`; return; }
+  if (!S.ms.length) { app.innerHTML = `<main><div class="card"><div class="empty">Ton compte n’est rattaché à aucune tontine. Contacte l’administrateur.</div><button class="sec" onclick="logout()">Se déconnecter</button></div></main>`; return; }
+  const unread = S.notifs.filter(n => !n.read_at).length, t = tontine(), tabOn = S.view === 'member' ? 'members' : S.view;
+  app.innerHTML = `<header><h1>${esc(t.name)}<small>${esc(ROLE[role()])}</small></h1><button class="bell" onclick="S.view='alerts';render()" aria-label="Notifications">🔔${unread ? `<b>${unread}</b>` : ''}</button></header>
+  <main>${VIEWS[S.view]()}</main>
+  <nav>${TABS.map(([k, i, l]) => `<button class="${tabOn === k ? 'on' : ''}" onclick="S.view='${k}';render();scrollTo(0,0)"><i>${i}</i>${l}</button>`).join('')}</nav>`;
+}
+
+if (configured) {
+  S.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
+  S.sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { S.user = null; render(); } });
+  boot();
+} else render();
+</script>
+</body>
+</html>
